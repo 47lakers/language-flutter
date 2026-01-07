@@ -1,0 +1,9 @@
+{
+    "people": ["mi amigo", "mi hermana", "el profesor", "la vecina", "mis padres", "un compañero"],
+    "places": ["en casa", "en el trabajo", "en la escuela", "en el supermercado", "en el parque", "en la cocina"],
+    "time": ["hoy", "mañana", "esta semana", "los fines de semana", "por la noche", "por la mañana"],
+    "objects": ["café", "agua", "pan", "música", "un libro", "una película", "una idea", "una llamada"],
+    "goals": ["para descansar", "para aprender", "para ahorrar dinero", "para llegar temprano", "para sentirme mejor"],
+    "emotions": ["contento", "nervioso", "cansado", "emocionada", "tranquilo", "preocupado"]
+  }
+  

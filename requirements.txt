@@ -1,0 +1,10 @@
+numpy<2
+scikit-learn<1.5
+
+streamlit>=1.37.0
+streamlit-autorefresh>=1.0.1
+pydantic>=2.7.0
+python-dotenv>=1.0.1
+edge-tts>=6.1.10
+openai>=1.40.0
+mlconjug3>=3.11.0
