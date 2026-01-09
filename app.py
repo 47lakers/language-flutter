@@ -1,9 +1,11 @@
 import base64
+import random
 import time
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 from src.config import Settings
+from src.generation.gemini_provider import GeminiProvider
 from src.generation.template_fallback import TemplateFallbackGenerator
 from src.tts.edge_tts import synthesize_mp3
 from src.models import GeneratedItem
@@ -11,6 +13,7 @@ from src.models import GeneratedItem
 st.set_page_config(page_title="Spanish Sentences (ES → EN + Voice)", layout="centered")
 
 settings = Settings()
+# default to the safe template fallback until user selects Gemini
 fallback = TemplateFallbackGenerator(settings)
 
 st.session_state.setdefault("seen_count", 0)
@@ -54,22 +57,32 @@ def meta_pill(item: GeneratedItem):
     )
 
 # ✅ UPDATED: generation now respects an optional focus verb list
-def generate_item(settings: Settings, focus_verbs: list[str]) -> GeneratedItem:
+def generate_item(settings: Settings, focus_verbs: list[str], provider) -> GeneratedItem:
     """
-    If focus_verbs is non-empty, we keep generating until we get a sentence whose
-    item.verb is in the focus list (up to N tries). If focus_verbs is empty,
-    we generate normally (all verbs).
+    Fetch from batch cache if available, else fetch a new batch.
+    If focus_verbs is non-empty, fetch a batch with sentences distributed 
+    across all focus verbs. All 20 sentences use only verbs from focus_verbs.
     """
-    if not focus_verbs:
-        return fallback.generate_one(settings=settings)
+    # Check if we have a cached batch and haven't exhausted it
+    batch = st.session_state.get("sentence_batch", [])
+    batch_index = st.session_state.get("batch_index", 0)
 
-    # Try a handful of times to hit a focused verb (prevents infinite loops)
-    for _ in range(30):
-        item = fallback.generate_one(settings=settings)
-        if item.verb and item.verb.strip().lower() in focus_verbs:
-            return item
+    if not batch or batch_index >= len(batch):
+        # Fetch a new batch
+        # If focus_verbs is set, pass the entire list; Gemini will distribute across all verbs
+        # Otherwise, pass None and let generate_batch pick a random verb
+        batch = provider.generate_batch(settings=settings, focus_verbs=focus_verbs if focus_verbs else None)
+        batch_index = 0
+        st.session_state["sentence_batch"] = batch
+        st.session_state["batch_index"] = batch_index
 
-    # If we didn't hit one, fall back to whatever we got last
+    # Get the current item from the batch and advance index
+    if batch and batch_index < len(batch):
+        item = batch[batch_index]
+        st.session_state["batch_index"] = batch_index + 1
+        return item
+
+    # Fallback (shouldn't reach here)
     return fallback.generate_one(settings=settings)
 
 # ----------------------------
@@ -77,6 +90,10 @@ def generate_item(settings: Settings, focus_verbs: list[str]) -> GeneratedItem:
 # ----------------------------
 st.session_state.setdefault("item", None)
 st.session_state.setdefault("revealed", False)
+
+# Batch caching (20 sentences per API call)
+st.session_state.setdefault("sentence_batch", [])
+st.session_state.setdefault("batch_index", 0)
 
 # autoplay state machine (text only)
 st.session_state.setdefault("auto_phase", "idle")  # idle | spanish | english
@@ -98,16 +115,16 @@ def clear_prefetch():
     st.session_state.next_ready = False
     st.session_state.next_item = None
 
-# ✅ UPDATED: prefetch now respects focus verbs
-def prefetch_next(settings: Settings, focus_verbs: list[str]):
+# ✅ UPDATED: prefetch now respects focus verbs and uses batch provider
+def prefetch_next(settings: Settings, focus_verbs: list[str], provider):
     """Prefetch the next sentence (fast)."""
     if st.session_state.next_ready:
         return
-    st.session_state.next_item = generate_item(settings=settings, focus_verbs=focus_verbs)
+    st.session_state.next_item = generate_item(settings=settings, focus_verbs=focus_verbs, provider=provider)
     st.session_state.next_ready = True
 
-# ✅ UPDATED: advance now respects focus verbs
-def advance_to_next(settings: Settings, focus_verbs: list[str]):
+# ✅ UPDATED: advance now respects focus verbs and uses batch provider
+def advance_to_next(settings: Settings, focus_verbs: list[str], provider):
     """
     Swap in prefetched next if ready, else generate synchronously.
     We keep revealed=False so English is never shown while the sentence swaps.
@@ -118,7 +135,7 @@ def advance_to_next(settings: Settings, focus_verbs: list[str]):
         st.session_state.item = st.session_state.next_item
         clear_prefetch()
     else:
-        st.session_state.item = generate_item(settings=settings, focus_verbs=focus_verbs)
+        st.session_state.item = generate_item(settings=settings, focus_verbs=focus_verbs, provider=provider)
 
     st.session_state.auto_phase = "spanish"
     st.session_state.phase_started_at = time.time()
@@ -129,7 +146,23 @@ def advance_to_next(settings: Settings, focus_verbs: list[str]):
 # ----------------------------
 with st.sidebar:
     st.header("Settings")
-    st.info("AI generation is disabled for now (fallback mode).")
+
+    generator_choice = st.selectbox(
+        "Generator backend",
+        ["Gemini", "Fallback"],
+        index=0 if settings.gemini_api_key else 1,
+    )
+
+    if generator_choice == "Gemini":
+        try:
+            gem = GeminiProvider(settings)
+            fallback = gem
+            st.caption("Using Gemini for generation.")
+        except Exception as e:
+            st.error(f"Gemini unavailable: {e} — falling back to template generator.")
+            fallback = TemplateFallbackGenerator(settings)
+    else:
+        fallback = TemplateFallbackGenerator(settings)
 
     level = st.selectbox(
         "Level",
@@ -137,6 +170,7 @@ with st.sidebar:
         index=["A1", "A2", "B1", "B2", "C1", "C2"].index(
             settings.app_level if settings.app_level in ["A1", "A2", "B1", "B2", "C1", "C2"] else "A2"
         ),
+        disabled=(generator_choice == "Fallback"),
     )
 
     tense_options = [
@@ -211,7 +245,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     if st.button("➕ New sentence", use_container_width=True):
-        st.session_state.item = generate_item(settings=settings, focus_verbs=focus_verbs)
+        st.session_state.item = generate_item(settings=settings, focus_verbs=focus_verbs, provider=fallback)
         st.session_state.revealed = False
         st.session_state.auto_phase = "spanish"
         st.session_state.phase_started_at = time.time()
@@ -234,7 +268,7 @@ if autoplay:
 # If autoplay was just turned on, start immediately
 if autoplay and not st.session_state.autoplay_prev:
     if st.session_state.item is None:
-        st.session_state.item = generate_item(settings=settings, focus_verbs=focus_verbs)
+        st.session_state.item = generate_item(settings=settings, focus_verbs=focus_verbs, provider=fallback)
         st.session_state.seen_count += 1
     st.session_state.revealed = False
     st.session_state.auto_phase = "spanish"
@@ -254,10 +288,10 @@ if autoplay and item is not None and st.session_state.auto_phase != "idle":
         st.session_state.auto_phase = "english"
         st.session_state.phase_started_at = time.time()
         # while on English, prefetch next (text-only)
-        prefetch_next(settings, focus_verbs)
+        prefetch_next(settings, focus_verbs, fallback)
 
     elif st.session_state.auto_phase == "english" and elapsed >= english_seconds:
-        advance_to_next(settings, focus_verbs)
+        advance_to_next(settings, focus_verbs, fallback)
         item = st.session_state.item
 
 st.divider()

@@ -22,9 +22,8 @@ docker build -t spanish-sentence-app:latest .
 # Run the container
 docker run --rm -it \
   -p 8501:8501 \
-  -e OPENAI_API_KEY="<YOUR_OPENAI_API_KEY>" \
-  -e OPENAI_MODEL="gpt-5-mini" \
-  -e OPENAI_REASONING_EFFORT="low" \
+  -e GEMINI_API_KEY="<YOUR_GEMINI_API_KEY>" \
+  -e GEMINI_MODEL="gemini-1.5-mini" \
   spanish-sentence-app:latest
 ```
 

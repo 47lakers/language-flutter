@@ -6,16 +6,16 @@ import os
 load_dotenv()
 
 class Settings(BaseModel):
-    # OpenAI
-    openai_api_key: str | None = Field(default_factory=lambda: os.getenv("OPENAI_API_KEY"))
-    openai_model: str = Field(default_factory=lambda: os.getenv("OPENAI_MODEL", "gpt-5-mini"))
-    openai_reasoning_effort: str = Field(default_factory=lambda: os.getenv("OPENAI_REASONING_EFFORT", "low"))
+    # Gemini (Google)
+    gemini_api_key: str | None = Field(default_factory=lambda: os.getenv("GEMINI_API_KEY"))
+    gemini_model: str = Field(default_factory=lambda: os.getenv("GEMINI_MODEL", "gemini-2.5-flash"))
 
     # App generation defaults
     app_level: str = Field(default_factory=lambda: os.getenv("APP_LEVEL", "A2"))
     app_tenses_raw: str = Field(default_factory=lambda: os.getenv("APP_TENSES", "present,preterite"))
     include_questions: bool = False
     include_negations: bool = False
+    batch_size: int = Field(default_factory=lambda: int(os.getenv("BATCH_SIZE", "20")))
 
     # TTS
     app_tts_voice_es: str = Field(default_factory=lambda: os.getenv("APP_TTS_VOICE_ES", "es-ES-ElviraNeural"))

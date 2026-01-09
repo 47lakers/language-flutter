@@ -7,18 +7,54 @@ The Spanish MUST be fully conjugated and idiomatic (native-like), not literal or
 """
 
 def build_prompt(
-    verb: str,
+    verb: str | list[str],
     level: str,
     tense_options: list[str],
     include_questions: bool,
     include_negations: bool,
-    vocab: dict
+    vocab: dict,
+    batch_size: int = 1
 ) -> str:
+    # Handle both single verb and list of verbs
+    if isinstance(verb, list):
+        verb_str = ", ".join(verb)
+        task_desc = f"Generate exactly {batch_size} Spanish sentence{'s' if batch_size > 1 else ''} using ONLY these verbs (distributed roughly evenly): {verb_str}. Provide natural English translation{'s' if batch_size > 1 else ''}."
+        verb_input = verb
+    else:
+        verb_str = verb
+        task_desc = f"Generate exactly {batch_size} Spanish sentence{'s' if batch_size > 1 else ''} that use{'s' if batch_size == 1 else ''} the given verb (in a correctly conjugated form) and provide natural English translation{'s' if batch_size > 1 else ''}."
+        verb_input = verb
+    
+    if batch_size > 1:
+        output_schema = {
+            "sentences": [
+                {
+                    "verb": "string (the infinitive verb)",
+                    "tense": "string (one of allowed_tenses)",
+                    "level": "string (same as input level)",
+                    "spanish": "string (one sentence, natural Spanish)",
+                    "english": "string (natural English translation)",
+                    "notes": "string | null (optional short note, max 120 chars)"
+                }
+            ]
+        }
+        output_instruction = f"Return ONLY valid JSON with 'sentences' array of {batch_size} items. Example: {json.dumps(output_schema)}"
+    else:
+        output_schema = {
+            "verb": "string (the infinitive verb you were given)",
+            "tense": "string (one of allowed_tenses)",
+            "level": "string (same as input level)",
+            "spanish": "string (one sentence, natural Spanish)",
+            "english": "string (natural English translation)",
+            "notes": "string | null (optional short note, max 120 chars)"
+        }
+        output_instruction = f"Return ONLY valid JSON matching this schema. Example: {json.dumps(output_schema)}"
+    
     return json.dumps(
         {
-            "task": "Generate exactly ONE Spanish sentence that uses the given verb (in a correctly conjugated form) and provide a natural English translation.",
+            "task": task_desc,
             "inputs": {
-                "verb_infinitive": verb,
+                "verb_infinitive": verb_input,
                 "level": level,
                 "allowed_tenses": tense_options,
                 "variation": {
@@ -51,14 +87,8 @@ def build_prompt(
                 "Chosen tense matches the Spanish verb form.",
                 "No missing conjugation."
             ],
-            "output_schema": {
-                "verb": "string (the infinitive verb you were given)",
-                "tense": "string (one of allowed_tenses)",
-                "level": "string (same as input level)",
-                "spanish": "string (one sentence, natural Spanish)",
-                "english": "string (natural English translation)",
-                "notes": "string | null (optional short note, max 120 chars)"
-            },
+            "output_instructions": output_instruction,
+            "output_schema": output_schema,
             "examples_of_good_output": [
                 {
                     "verb": "llamar",
