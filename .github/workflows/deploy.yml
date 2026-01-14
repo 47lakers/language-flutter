@@ -1,0 +1,39 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Flutter web for production
+        env:
+          PROD_API_KEY: ${{ secrets.PROD_API_KEY }}
+        run: |
+          flutter build web --release \
+            --dart-define=ENV=prod \
+            --dart-define="PROD_API_KEY=$PROD_API_KEY"
+
+      - name: Deploy to EC2
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > key.pem
+          chmod 600 key.pem
+          rsync -avz --delete -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+            build/web/ ubuntu@${{ secrets.EC2_IP }}:/var/www/dailyfrase/
+          rm key.pem

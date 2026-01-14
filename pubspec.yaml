@@ -1,0 +1,24 @@
+name: flutter_firebase_mock_skel
+description: Minimal Flutter skeleton with mocked Firebase auth and two pages (login + home).
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=2.19.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.0.5
+  http: ^0.13.6
+  flutter_tts: ^4.0.2
+  firebase_core: ^3.8.1
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
