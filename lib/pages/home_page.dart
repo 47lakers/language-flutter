@@ -185,6 +185,9 @@ class _HomePageState extends State<HomePage> {
       final currentSentence = _sentences![_currentSentenceIndex];
       final verb = currentSentence['verb'] as String? ?? '';
       final tense = currentSentence['tense'] as String? ?? 'present';
+      final phrase = currentSentence['target_text'] as String? ?? '';
+      final phraseTranslation = currentSentence['translation_text'] as String? ?? '';
+      final verbTranslation = currentSentence['verb_translation'] as String? ?? '';
       
       // Move to next sentence in the batch
       setState(() {
@@ -209,6 +212,9 @@ class _HomePageState extends State<HomePage> {
             verb.toLowerCase(),
             tense.toLowerCase(),
             _firstLanguage,
+            phrase: phrase,
+            phraseTranslation: phraseTranslation,
+            verbTranslation: verbTranslation,
           );
           print('Successfully recorded sentence');
         } catch (e) {
@@ -571,7 +577,6 @@ class _HomePageState extends State<HomePage> {
                   _buildDropdown(
                     value: _firstLanguage,
                     items: [
-                      'English',
                       'Spanish',
                       'French',
                       'German',
@@ -639,6 +644,16 @@ class _HomePageState extends State<HomePage> {
                       activeColor: const Color(0xFF6366F1),
                       contentPadding: EdgeInsets.zero,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.help_outline, color: Color(0xFF6366F1)),
+                    title: const Text('View Tutorial', style: TextStyle(fontSize: 14)),
+                    onTap: () {
+                      Navigator.of(context).pop(); // close drawer
+                      context.read<AuthService>().setNewUserFlag();
+                    },
                   ),
                 ],
               ),
