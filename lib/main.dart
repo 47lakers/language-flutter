@@ -6,6 +6,7 @@ import 'config/config.dart';
 import 'services/auth_service.dart';
 import 'pages/login_page.dart';
 import 'pages/home_page.dart';
+import 'pages/onboarding_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
             routes: {
               '/login': (_) => const LoginPage(),
               '/home': (_) => const HomePage(),
+              '/onboarding': (_) => const OnboardingPage(),
             },
           );
         },
@@ -60,7 +62,7 @@ class MyApp extends StatelessWidget {
       scaffoldBackgroundColor: const Color(0xFF0F1419),
       primaryColor: const Color(0xFF6366F1),
       cardColor: const Color(0xFF1A1F2E),
-      dividerColor: const Color(0xFF2D3748),
+      dividerColor: const Color(0xFF374151),
       colorScheme: const ColorScheme.dark(
         primary: Color(0xFF6366F1),
         secondary: Color(0xFF818CF8),
@@ -70,17 +72,20 @@ class MyApp extends StatelessWidget {
       cardTheme: const CardThemeData(
         color: Color(0xFF1A1F2E),
         elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: const Color(0xFF1A1F2E),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748)),
+          borderSide: const BorderSide(color: Color(0xFF374151)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748)),
+          borderSide: const BorderSide(color: Color(0xFF374151)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -115,6 +120,10 @@ class MyApp extends StatelessWidget {
       cardTheme: const CardThemeData(
         color: Colors.white,
         elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          side: BorderSide(color: Color(0xFFE2E8F0)),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -152,11 +161,16 @@ class RootRouter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.select<AuthService, User?>((auth) => auth.currentUser);
-    
-    print('🔀 RootRouter building - user: ${user?.uid ?? 'null'}');
-    
+    final auth = context.watch<AuthService>();
+    final user = auth.currentUser;
+
+    print('🔀 RootRouter building - user: ${user?.uid ?? 'null'}, isNewUser: ${auth.isNewUser}');
+
     if (user != null) {
+      if (auth.isNewUser) {
+        print('➡️ Showing OnboardingPage for new user: ${user.uid}');
+        return const OnboardingPage();
+      }
       print('➡️ Showing HomePage for user: ${user.uid}');
       // Use user.uid as key to force HomePage to rebuild when user changes
       return HomePage(key: ValueKey(user.uid));

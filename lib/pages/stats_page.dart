@@ -65,11 +65,13 @@ class StatsPage extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
                             _buildStatColumn(
+                              context,
                               'Total Sentences',
                               userData.totalSentences.toString(),
                               Icons.library_books,
                             ),
                             _buildStatColumn(
+                              context,
                               'Verbs Learned',
                               userData.verbsLearned.length.toString(),
                               Icons.text_fields,
@@ -119,14 +121,16 @@ class StatsPage extends StatelessWidget {
                               vertical: 4,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF2D3748),
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? const Color(0xFF374151)
+                                  : const Color(0xFFEEF2FF),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               '${languageEntry.value.length} verbs',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
                               ),
                             ),
                           ),
@@ -149,7 +153,7 @@ class StatsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatColumn(String label, String value, IconData icon) {
+  Widget _buildStatColumn(BuildContext context, String label, String value, IconData icon) {
     return Column(
       children: [
         Icon(icon, size: 32, color: const Color(0xFF6366F1)),
@@ -164,9 +168,9 @@ class StatsPage extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
-            color: Colors.grey,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
           ),
         ),
       ],
@@ -184,15 +188,29 @@ class StatsPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Verb + translation header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  verb,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      verb,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (details.verbTranslation.isNotEmpty)
+                      Text(
+                        details.verbTranslation,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+                        ),
+                      ),
+                  ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -214,16 +232,15 @@ class StatsPage extends StatelessWidget {
               ],
             ),
             if (tensesList.isNotEmpty) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               const Divider(height: 1),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: tensesList.map((tense) {
-                  return _buildTenseChip(tense.key, tense.value);
-                }).toList(),
-              ),
+              // Expandable tense rows
+              ...tensesList.map((tenseEntry) => _buildExpandableTense(
+                    context,
+                    tenseEntry.key,
+                    tenseEntry.value,
+                    details.phrases[tenseEntry.key] ?? [],
+                  )),
             ],
           ],
         ),
@@ -231,33 +248,96 @@ class StatsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTenseChip(String tense, int count) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D3748),
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildExpandableTense(
+    BuildContext context,
+    String tense,
+    int count,
+    List<Map<String, String>> phrases,
+  ) {
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        childrenPadding: const EdgeInsets.only(bottom: 8),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF374151)
+                    : const Color(0xFFEEF2FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    tense,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    count.toString(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        children: phrases.isEmpty
+            ? [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    'No phrases recorded yet.',
+                    style: TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ),
+              ]
+            : phrases
+                .map((p) => _buildPhraseRow(context, p['p'] ?? '', p['t'] ?? ''))
+                .toList(),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            tense,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+    );
+  }
+
+  Widget _buildPhraseRow(BuildContext context, String phrase, String translation) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              phrase,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            count.toString(),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF818CF8),
+            const SizedBox(height: 4),
+            Text(
+              translation,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.55),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -15,6 +15,7 @@ class AuthService extends ChangeNotifier {
   final UserDatabaseService _userDb = UserDatabaseService();
   User? _user;
   bool _isLoading = false;
+  bool _isNewUser = false;
 
   AuthService() {
     // Listen to auth state changes
@@ -33,6 +34,19 @@ class AuthService extends ChangeNotifier {
 
   User? get currentUser => _user;
   bool get isLoading => _isLoading;
+  bool get isNewUser => _isNewUser;
+
+  /// Call this once the onboarding flow has been completed or skipped.
+  void clearNewUserFlag() {
+    _isNewUser = false;
+    notifyListeners();
+  }
+
+  /// Re-trigger the onboarding flow from anywhere in the app.
+  void setNewUserFlag() {
+    _isNewUser = true;
+    notifyListeners();
+  }
 
   /// Sign in with email and password.
   Future<User?> signIn(String email, String password) async {
@@ -89,6 +103,7 @@ class AuthService extends ChangeNotifier {
         
         // Initialize user in Firestore
         await _userDb.initializeUser(_user!.uid, _user!.email);
+        _isNewUser = true;
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
       _setLoading(false);

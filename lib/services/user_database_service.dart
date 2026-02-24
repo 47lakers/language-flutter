@@ -5,26 +5,43 @@ class VerbDetails {
   final int total;
   final Map<String, int> tenses; // tense -> count
   final String language; // language the verb is from
+  final String verbTranslation; // e.g. "to eat" — populated once backend returns it
+  final Map<String, List<Map<String, String>>> phrases; // tense -> [{p: phrase, t: translation}]
 
   VerbDetails({
     this.total = 0,
     Map<String, int>? tenses,
     this.language = '',
-  }) : tenses = tenses ?? {};
+    this.verbTranslation = '',
+    Map<String, List<Map<String, String>>>? phrases,
+  })  : tenses = tenses ?? {},
+        phrases = phrases ?? {};
 
   Map<String, dynamic> toMap() {
     return {
       'total': total,
       'tenses': tenses,
       'language': language,
+      'verbTranslation': verbTranslation,
+      'phrases': phrases,
     };
   }
 
   factory VerbDetails.fromMap(Map<String, dynamic> map) {
+    final phrasesRaw = map['phrases'] as Map<String, dynamic>? ?? {};
+    final phrases = phrasesRaw.map((k, v) {
+      final list = (v as List<dynamic>? ?? []).map((e) {
+        final m = Map<String, dynamic>.from(e as Map);
+        return {'p': (m['p'] ?? '') as String, 't': (m['t'] ?? '') as String};
+      }).toList();
+      return MapEntry(k, list);
+    });
     return VerbDetails(
       total: map['total'] ?? 0,
       tenses: Map<String, int>.from(map['tenses'] ?? {}),
       language: map['language'] ?? '',
+      verbTranslation: map['verbTranslation'] as String? ?? '',
+      phrases: phrases,
     );
   }
 }
@@ -121,19 +138,30 @@ class UserDatabaseService {
     });
   }
 
-  // Record a completed sentence with verb and tense
-  Future<void> recordSentenceComplete(String uid, String verb, String tense, String language) async {
+  // Record a completed sentence with verb, tense, and optionally the phrase/translation
+  Future<void> recordSentenceComplete(
+    String uid,
+    String verb,
+    String tense,
+    String language, {
+    String phrase = '',
+    String phraseTranslation = '',
+    String verbTranslation = '',
+  }) async {
     // Validate inputs
     if (verb.isEmpty || tense.isEmpty) {
       print('Invalid data: verb=$verb, tense=$tense - skipping');
       return;
     }
-    
+
     final userRef = _firestore.collection('users').doc(uid);
-    
+
     // Get current data or create new
     final doc = await userRef.get();
-    
+
+    // Build phrase entry if we have content
+    final newPhrase = phrase.isNotEmpty ? {'p': phrase, 't': phraseTranslation} : null;
+
     if (!doc.exists) {
       // If document doesn't exist, get email from auth and initialize
       final email = firebase_auth.FirebaseAuth.instance.currentUser?.email ?? '';
@@ -146,6 +174,8 @@ class UserDatabaseService {
             'total': 1,
             'tenses': {tense: 1},
             'language': language,
+            'verbTranslation': verbTranslation,
+            if (newPhrase != null) 'phrases': {tense: [newPhrase]},
           }
         },
         'lastUpdated': FieldValue.serverTimestamp(),
@@ -154,21 +184,38 @@ class UserDatabaseService {
       // Update existing - read current verb data
       final data = doc.data()!;
       final verbsLearnedRaw = data['verbsLearned'] as Map<String, dynamic>? ?? {};
-      
+
       // Get or create verb details
       final verbData = verbsLearnedRaw[verb] as Map<String, dynamic>?;
       final currentTotal = verbData?['total'] as int? ?? 0;
       final currentTenses = verbData?['tenses'] as Map<String, dynamic>? ?? {};
       final tensesMap = Map<String, int>.from(currentTenses);
-      
       tensesMap[tense] = (tensesMap[tense] ?? 0) + 1;
-      
+
+      // Preserve existing phrases and append new one (no duplicates)
+      final currentPhrasesRaw = verbData?['phrases'] as Map<String, dynamic>? ?? {};
+      final phrasesMap = currentPhrasesRaw.map(
+        (k, v) => MapEntry(k, List<Map<String, dynamic>>.from(v as List)),
+      );
+      if (newPhrase != null) {
+        final tensePhrases = phrasesMap.putIfAbsent(tense, () => []);
+        final isDupe = tensePhrases.any((e) => e['p'] == newPhrase['p']);
+        if (!isDupe) tensePhrases.add(newPhrase);
+      }
+
+      // Keep existing verbTranslation if we don't have a newer one
+      final storedVerbTranslation = verbTranslation.isNotEmpty
+          ? verbTranslation
+          : (verbData?['verbTranslation'] as String? ?? '');
+
       await userRef.update({
         'totalSentences': FieldValue.increment(1),
         'verbsLearned.$verb': {
           'total': currentTotal + 1,
           'tenses': tensesMap,
           'language': language,
+          'verbTranslation': storedVerbTranslation,
+          'phrases': phrasesMap,
         },
         'lastUpdated': FieldValue.serverTimestamp(),
       });
