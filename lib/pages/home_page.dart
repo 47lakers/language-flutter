@@ -29,6 +29,7 @@ class _HomePageState extends State<HomePage> {
   List<dynamic>? _sentences;
   int _currentSentenceIndex = 0;
   bool _showTranslation = false;
+  bool _showTranslationFirst = false;
   int _phrasesLearned = 0;
   late final DateTime _mountTime; // Track when page was mounted
 
@@ -320,51 +321,33 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                   const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _isLoading ? Colors.orange.withOpacity(0.2) : Colors.green.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
+                  Text(
+                    'DailyFrase',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: _isLoading ? Colors.orange : Colors.green,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _isLoading ? 'CONNECTING' : 'CONNECTED',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: _isLoading ? Colors.orange : Colors.green,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                TextButton(
-                  onPressed: () async {
-                    if (kIsWeb) {
-                      // On web, sign out then reload to clear everything
-                      await auth.signOut();
-                      html.window.location.reload();
-                    } else {
-                      // On mobile, sign out and clear navigation stack
-                      await auth.signOut();
-                      if (context.mounted) {
-                        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () async {
+                      if (kIsWeb) {
+                        await auth.signOut();
+                        html.window.location.reload();
+                      } else {
+                        await auth.signOut();
+                        if (context.mounted) {
+                          Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                        }
                       }
-                    }
-                  },
-                  child: const Text('Sign Out'),
-                ),
-              ],
+                    },
+                    child: const Text('Sign Out'),
+                  ),
+                ],
+              ),
             ),
-          ),
           // Content
           Expanded(
             child: SingleChildScrollView(
@@ -514,15 +497,19 @@ class _HomePageState extends State<HomePage> {
                         ],
                         // Sentence Cards
                         _buildSentenceCard(
-                          _firstLanguage,
-                          currentSentence['target_text'] ?? 'No text',
+                          _showTranslationFirst ? _secondLanguage : _firstLanguage,
+                          _showTranslationFirst
+                              ? (currentSentence['translation_text'] ?? 'No text')
+                              : (currentSentence['target_text'] ?? 'No text'),
                           Theme.of(context).cardColor,
                         ),
                         if (_showTranslation) ...[
                           const SizedBox(height: 24),
                           _buildSentenceCard(
-                            _secondLanguage,
-                            currentSentence['translation_text'] ?? 'No translation',
+                            _showTranslationFirst ? _firstLanguage : _secondLanguage,
+                            _showTranslationFirst
+                                ? (currentSentence['target_text'] ?? 'No translation')
+                                : (currentSentence['translation_text'] ?? 'No translation'),
                             Theme.of(context).cardColor,
                           ),
                         ],
@@ -627,9 +614,33 @@ class _HomePageState extends State<HomePage> {
                   _buildLabel('Tenses'),
                   const SizedBox(height: 12),
                   _buildTenseChips(),
-                  const SizedBox(height: 32),
-                  _buildLabel('Appearance'),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    title: Text(
+                      'Show $_secondLanguage First',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'See the translation and try to recall the phrase',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.55),
+                      ),
+                    ),
+                    value: _showTranslationFirst,
+                    onChanged: (value) {
+                      setState(() {
+                        _showTranslationFirst = value;
+                        _showTranslation = false;
+                      });
+                    },
+                    activeColor: const Color(0xFF6366F1),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: 8),
                   Consumer<ThemeProvider>(
                     builder: (context, themeProvider, child) => SwitchListTile(
                       title: Text(
