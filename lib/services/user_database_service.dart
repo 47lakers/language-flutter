@@ -190,18 +190,28 @@ class UserDatabaseService {
       final currentTotal = verbData?['total'] as int? ?? 0;
       final currentTenses = verbData?['tenses'] as Map<String, dynamic>? ?? {};
       final tensesMap = Map<String, int>.from(currentTenses);
-      tensesMap[tense] = (tensesMap[tense] ?? 0) + 1;
 
       // Preserve existing phrases and append new one (no duplicates)
       final currentPhrasesRaw = verbData?['phrases'] as Map<String, dynamic>? ?? {};
       final phrasesMap = currentPhrasesRaw.map(
         (k, v) => MapEntry(k, List<Map<String, dynamic>>.from(v as List)),
       );
+      bool isNewPhrase = true;
       if (newPhrase != null) {
         final tensePhrases = phrasesMap.putIfAbsent(tense, () => []);
         final isDupe = tensePhrases.any((e) => e['p'] == newPhrase['p']);
-        if (!isDupe) tensePhrases.add(newPhrase);
+        if (!isDupe) {
+          tensePhrases.add(newPhrase);
+        } else {
+          isNewPhrase = false;
+          print('⚠️ Duplicate phrase detected, skipping count increment: ${newPhrase['p']}');
+        }
       }
+
+      // Only increment counts if this is a genuinely new phrase
+      if (!isNewPhrase) return;
+
+      tensesMap[tense] = (tensesMap[tense] ?? 0) + 1;
 
       // Keep existing verbTranslation if we don't have a newer one
       final storedVerbTranslation = verbTranslation.isNotEmpty

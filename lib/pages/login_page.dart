@@ -15,6 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passCtrl = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _error;
+  bool _noAccountFound = false;
   bool _isSignUp = false; // Toggle between sign in and sign up
   bool _isLoading = false; // Local loading state to prevent rebuilds
   bool _obscurePassword = true; // Password visibility toggle
@@ -37,6 +38,7 @@ class _LoginPageState extends State<LoginPage> {
     
     setState(() {
       _error = null;
+      _noAccountFound = false;
       _isLoading = true;
     });
     if (!_formKey.currentState!.validate()) {
@@ -64,8 +66,15 @@ class _LoginPageState extends State<LoginPage> {
       print('❌ Error in submit: $e');
       // Catch any error and display it
       if (mounted) {
+        final msg = e.toString().replaceAll('Exception: ', '');
         setState(() {
-          _error = e.toString().replaceAll('Exception: ', '');
+          if (msg == 'NO_ACCOUNT_FOUND') {
+            _noAccountFound = true;
+            _error = null;
+          } else {
+            _error = msg;
+            _noAccountFound = false;
+          }
           _isLoading = false;
         });
       }
@@ -129,6 +138,51 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   ),
                   const SizedBox(height: 20),
+                  if (_noAccountFound) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.orange),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(Icons.person_search, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'No account found with this email.',
+                                  style: TextStyle(color: Colors.orange, fontSize: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isSignUp = true;
+                                  _noAccountFound = false;
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.orange,
+                                side: const BorderSide(color: Colors.orange),
+                              ),
+                              child: const Text('Create an Account'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (_error != null) ...[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -167,6 +221,7 @@ class _LoginPageState extends State<LoginPage> {
                       setState(() {
                         _isSignUp = !_isSignUp;
                         _error = null;
+                        _noAccountFound = false;
                       });
                     },
                     child: Text(
