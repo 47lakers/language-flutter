@@ -1,135 +1,104 @@
-# Language Learning Flutter App
+# DailyFrase
 
-A Flutter mobile app for learning languages through AI-generated sentences with text-to-speech pronunciation.
+A Flutter app for learning languages one phrase at a time, using AI-generated sentences with text-to-speech pronunciation.
 
 ## Features
-- Dark/Light theme toggle
-- AI-generated practice sentences in Spanish, French, Portuguese, or English
+- AI-generated practice phrases focused on a single verb per session
 - Text-to-speech with native pronunciation
-- Customizable settings: language, tenses, verb focus, questions/negations
-- Responsive design with hamburger menu for mobile
+- Customizable settings: language pair, tenses, verb focus, questions/negations
+- Progress tracking and streaks
+- Dark/Light theme toggle
+- Firebase authentication
 
-## Setup
+---
 
-1. Install dependencies:
-   ```bash
-   flutter pub get
-   ```
+## Prerequisites
 
-2. For iOS devices, install CocoaPods dependencies:
-   ```bash
-   cd ios
-   pod install
-   cd ..
-   ```
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) installed
+- For iOS: Xcode + CocoaPods (`brew install cocoapods`)
+- For web: Chrome browser
 
-## Testing
-
-### Testing on Laptop (Chrome/Web)
-
-1. Make sure your backend API server is running on `http://10.0.0.115:8000`
-
-2. Run the app in Chrome:
-   ```bash
-   flutter run -d chrome
-   ```
-
-3. Login with any credentials (auth is mocked)
-
-4. Test features:
-   - Click speaker icons to hear text-to-speech
-   - Toggle theme with sun/moon icon
-   - Use hamburger menu to adjust settings
-   - Change languages, tenses, verb focus
-
-### Testing on iPhone
-
-1. Prerequisites:
-   - Mac with Xcode installed
-   - iPhone connected via USB cable
-   - iPhone trusted this computer (check iPhone popup)
-   - CocoaPods installed: `brew install cocoapods`
-
-2. Run pod install (first time only):
-   ```bash
-   cd ios
-   pod install
-   cd ..
-   ```
-
-3. List available devices:
-   ```bash
-   flutter devices
-   ```
-
-4. Run on iPhone:
-   ```bash
-   flutter run -d <device-id>
-   ```
-   Or just `flutter run` and select your iPhone from the list
-
-5. Test features:
-   - Text-to-speech should work with correct pronunciation
-   - Normal speech rate (not too fast)
-   - Theme toggle
-   - All UI interactions
-
-## Files to Ignore in Git
-
-Create a `.gitignore` file with:
-
-```
-# Build outputs
-build/
-*.iml
-.flutter-plugins
-.flutter-plugins-dependencies
-
-# iOS
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/Generated.xcconfig
-ios/Flutter/flutter_export_environment.sh
-ios/Flutter/ephemeral/
-ios/Runner.xcworkspace/xcuserdata/
-*.pbxuser
-*.mode1v3
-*.mode2v3
-*.perspectivev3
-*.xcuserdata
-xcuserdata/
-
-# Android
-android/.gradle/
-android/gradle/
-android/local.properties
-android/app/debug/
-android/app/profile/
-android/app/release/
-
-# macOS
-macos/Flutter/ephemeral/
-macos/Pods/
-
-# Web
-web/flutter_service_worker.js
-web/flutter.js
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-
-# Dart
-.dart_tool/
-.packages
-pubspec.lock
+Install Flutter dependencies:
+```bash
+flutter pub get
 ```
 
-## Tech Stack
-- Flutter/Dart
-- Provider for state management
-- flutter_tts for text-to-speech
-- HTTP API client for sentence generation
+For iOS (first time only):
+```bash
+cd ios && pod install && cd ..
+```
+
+---
+
+## Local Development (Testing)
+
+The easiest way to run the app locally is the convenience script, which automatically sets `ENV=dev` and uses the **dev** Firebase project:
+
+```bash
+./run.sh           # Runs on Chrome (default)
+./run.sh ios       # Runs on a connected iOS device
+./run.sh android   # Runs on a connected Android device
+```
+
+Or run Flutter directly:
+```bash
+flutter run -d chrome --dart-define=ENV=dev
+```
+
+### Dev environment
+| Setting | Value |
+|---|---|
+| API Base URL | `http://localhost:8000` |
+| API Key | `test123` |
+| Firebase Project | `dev-language-firebase` |
+
+> **iOS note:** The script automatically calls `./ios/select_firebase_config.sh dev` before running. If running Flutter directly on iOS, call this manually first.
+
+---
+
+## Pushing to Production
+
+Production deploys are **fully automated via GitHub Actions**. There is nothing to run manually.
+
+### How it works
+
+1. Merge a branch (or push a commit) to **`main`**
+2. GitHub Actions triggers the [Deploy to Production](.github/workflows/deploy.yml) workflow automatically
+3. The workflow:
+   - Builds Flutter web with `ENV=prod`
+   - Deploys the build output to the EC2 server via `rsync` over SSH
+
+### Manual trigger
+
+You can also trigger a production deploy without a code change from the GitHub UI:
+
+> **GitHub → Actions → Deploy to Production → Run workflow**
+
+### Production environment
+| Setting | Value |
+|---|---|
+| API Base URL | `http://54.86.227.155:8000` |
+| Firebase Project | `language-firebase-d5667` |
+
+### Required GitHub Secrets
+| Secret | Purpose |
+|---|---|
+| `PROD_API_KEY` | Passed as `--dart-define` to the Flutter build |
+| `EC2_SSH_KEY` | SSH private key for the EC2 server |
+| `EC2_IP` | IP address of the EC2 server |
+
+---
+
+## Project Structure
+
+| Path | Purpose |
+|---|---|
+| `lib/config/environment.dart` | Dev/prod environment config |
+| `lib/firebase_options.dart` | Dev & prod Firebase options |
+| `ios/select_firebase_config.sh` | Copies correct `GoogleService-Info.plist` for iOS |
+| `android/app/google-services-dev.json` | Dev Firebase config for Android |
+| `android/app/google-services-prod.json` | Prod Firebase config for Android |
+| `run.sh` | Convenience script for local dev |
+| `.github/workflows/deploy.yml` | CI/CD pipeline |
+
+For a full breakdown of environment configuration see [ENVIRONMENT_SETUP.md](ENVIRONMENT_SETUP.md).

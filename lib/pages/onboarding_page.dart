@@ -16,7 +16,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final List<_OnboardingSlideData> _slides = const [
     _OnboardingSlideData(
-      icon: Icons.translate,
+      icon: Icons.language,
       title: 'Welcome to DailyFrase!',
       description:
           'Learn a new language one phrase at a time. Each session focuses on a single verb with up to 20 unique phrases — so you see it used in real context, not just memorized in isolation.',
@@ -28,7 +28,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Tap the ☰ menu in the top-left corner to open settings. From there you can choose your language pair, tenses, and even focus on a specific verb.',
     ),
     _OnboardingSlideData(
-      icon: Icons.touch_app_rounded,
+      icon: Icons.touch_app,
       title: 'Three Buttons, Simple Flow',
       description:
           '"New" loads the next phrase (counts as learned). "Reveal" shows the translation without moving on. "Skip" moves to the next phrase without counting it. All 20 phrases share the same verb so you build real fluency fast.',

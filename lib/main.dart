@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'Language Learning App',
+            title: 'DailyFrase',
             debugShowCheckedModeBanner: false,
             theme: themeProvider.isDarkMode ? _darkTheme() : _lightTheme(),
             home: const RootRouter(),
