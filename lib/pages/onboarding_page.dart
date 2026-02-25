@@ -25,7 +25,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       icon: Icons.menu,
       title: 'Customize Your Settings',
       description:
-          'Tap the ☰ menu in the top-left corner to open settings. From there you can choose your language pair, tenses, and even focus on a specific verb.',
+          'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.',
     ),
     _OnboardingSlideData(
       icon: Icons.touch_app,
@@ -55,6 +55,15 @@ class _OnboardingPageState extends State<OnboardingPage> {
       );
     } else {
       _finish();
+    }
+  }
+
+  void _previousPage() {
+    if (_currentPage > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
     }
   }
 
@@ -122,18 +131,31 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
             const SizedBox(height: 32),
 
-            // Next / Get Started button
+            // Back / Next buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _nextPage,
-                  child: Text(
-                    _currentPage == _totalPages - 1 ? 'Get Started 🚀' : 'Next',
-                    style: const TextStyle(fontSize: 16),
+              child: Row(
+                children: [
+                  if (_currentPage > 0) ...
+                    [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _previousPage,
+                          child: const Text('Back', style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _nextPage,
+                      child: Text(
+                        _currentPage == _totalPages - 1 ? 'Get Started 🚀' : 'Next',
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
 
