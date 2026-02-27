@@ -33,7 +33,7 @@ flutter run -d chrome --dart-define=ENV=dev
 
 **Production:**
 ```bash
-flutter run -d chrome --dart-define=ENV=prod --dart-define=PROD_API_KEY=$5FrEfruFrlz
+flutter run -d chrome --dart-define=ENV=prod --dart-define=PROD_API_KEY=YOUR_PROD_API_KEY
 ```
 
 ### For iOS
@@ -73,17 +73,17 @@ flutter run -d android --dart-define=ENV=prod  # Uses google-services-prod.json
 
 ### Production
 - **API Base URL:** `http://54.86.227.155:8000`
-- **API Key:** `$5FrEfruFrlz`
+- **API Key:** *(stored in `.env.local` and GitHub Actions secret `PROD_API_KEY`)*
 - **Firebase Project:** `language-firebase-d5667`
 
 ## Complete Build for Production
 
 ```bash
 # Web
-flutter build web --dart-define=ENV=prod --dart-define=PROD_API_KEY=$5FrEfruFrlz
+flutter build web --dart-define=ENV=prod --dart-define=PROD_API_KEY=YOUR_PROD_API_KEY
 
 # Android
-flutter build apk --flavor prod --dart-define=ENV=prod --dart-define=PROD_API_KEY=$5FrEfruFrlz
+flutter build apk --flavor prod --dart-define=ENV=prod --dart-define=PROD_API_KEY=YOUR_PROD_API_KEY
 
 # iOS
 ./ios/select_firebase_config.sh prod

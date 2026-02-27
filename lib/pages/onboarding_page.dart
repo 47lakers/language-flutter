@@ -19,7 +19,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       icon: Icons.language,
       title: 'Welcome to DailyFrase!',
       description:
-          'Learn a new language one phrase at a time. Each session focuses on a single verb with up to 20 unique phrases — so you see it used in real context, not just memorized in isolation.',
+          'Learn a new language one phrase at a time. Each session focuses on a single verb with up to 20 unique phrases — so you see it used in real context, not just memorized in isolation.\n\nFor best results, say each phrase out loud. Speaking activates muscle memory and trains your ear, making new vocabulary stick far faster than reading alone.',
     ),
     _OnboardingSlideData(
       icon: Icons.menu,

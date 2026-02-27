@@ -237,4 +237,50 @@ class UserDatabaseService {
     final userData = UserData(uid: uid, email: email);
     await createOrUpdateUser(userData);
   }
+
+  // ---------------------------------------------------------------------------
+  // Daily API rate limiting
+  // ---------------------------------------------------------------------------
+
+  static const int dailyApiLimit = 5;
+
+  /// Returns true if the request is allowed, false if the daily limit is reached.
+  /// Atomically increments the counter when allowed.
+  Future<bool> checkAndIncrementDailyApiUsage(String uid) async {
+    final userRef = _firestore.collection('users').doc(uid);
+
+    return _firestore.runTransaction<bool>((transaction) async {
+      final snapshot = await transaction.get(userRef);
+
+      final today = DateTime.now();
+      final todayStr =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+
+      int currentCount = 0;
+
+      if (snapshot.exists) {
+        final data = snapshot.data()!;
+        final storedDate = data['dailyApiDate'] as String?;
+        if (storedDate == todayStr) {
+          currentCount = (data['dailyApiCount'] as int?) ?? 0;
+        }
+        // If date is different, currentCount stays 0 (new day → reset)
+      }
+
+      if (currentCount >= dailyApiLimit) {
+        return false; // limit reached, do not increment
+      }
+
+      transaction.set(
+        userRef,
+        {
+          'dailyApiCount': currentCount + 1,
+          'dailyApiDate': todayStr,
+        },
+        SetOptions(merge: true),
+      );
+
+      return true;
+    });
+  }
 }
