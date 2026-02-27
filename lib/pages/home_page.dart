@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, SocketException;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
@@ -138,6 +138,19 @@ class _HomePageState extends State<HomePage> {
       _error = null;
     });
 
+    // Check daily rate limit before hitting the API
+    final auth = context.read<AuthService>();
+    if (auth.currentUser != null) {
+      final allowed = await _userDb.checkAndIncrementDailyApiUsage(auth.currentUser!.uid);
+      if (!allowed) {
+        setState(() {
+          _isLoading = false;
+          _error = "You've reached your 5 requests for today. Come back tomorrow!";
+        });
+        return;
+      }
+    }
+
     try {
       final tenses = _selectedTenses.map((t) => t.toLowerCase()).toList();
       final focusVerbs = _verbFocusController.text
@@ -162,17 +175,35 @@ class _HomePageState extends State<HomePage> {
         _showTranslation = false;
         
         if (_sentences == null || _sentences!.isEmpty) {
-          _error = 'No sentences returned from API';
+          _error = 'No phrases came back — please try again.';
         }
       });
     } on ApiException catch (e) {
       setState(() {
-        _error = 'Server error ${e.status}: ${e.message}';
+        // Log the raw detail for debugging, show a clean message to the user
+        print('ApiException ${e.status}: ${e.message}');
+        if (e.status >= 500) {
+          _error = 'Our server ran into a problem. Please try again in a moment.';
+        } else if (e.status == 401 || e.status == 403) {
+          _error = 'Authentication error. Please sign out and back in.';
+        } else if (e.status == 429) {
+          _error = 'Too many requests — please wait a moment and try again.';
+        } else {
+          _error = 'Something went wrong (code ${e.status}). Please try again.';
+        }
+      });
+    } on SocketException {
+      setState(() {
+        _error = 'No internet connection. Check your network and try again.';
+      });
+    } on TimeoutException {
+      setState(() {
+        _error = 'The request took too long. Check your connection and try again.';
       });
     } catch (e) {
+      print('Unexpected error: $e');
       setState(() {
-        _error = 'Request failed: $e';
-        print('Error details: $e');
+        _error = 'Something unexpected happened. Please try again.';
       });
     } finally {
       if (mounted) {

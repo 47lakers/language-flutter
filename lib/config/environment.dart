@@ -38,9 +38,10 @@ class EnvironmentConfig {
       case Environment.dev:
         return 'test123';
       case Environment.prod:
-        // Read from --dart-define=PROD_API_KEY=your_key at build time
-        // Example: flutter run -d chrome --dart-define=ENV=prod --dart-define=PROD_API_KEY=your_key
-        const String prodKey = String.fromEnvironment('PROD_API_KEY', defaultValue: r'$5FrEfruFrlz');
+        // Must be passed at build time via --dart-define=PROD_API_KEY=...
+        // or via GitHub Actions secret. Never hardcode the real key here.
+        const String prodKey = String.fromEnvironment('PROD_API_KEY', defaultValue: '');
+        assert(prodKey.isNotEmpty, 'PROD_API_KEY must be set when building for prod');
         return prodKey;
     }
   }
