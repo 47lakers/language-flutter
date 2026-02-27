@@ -116,6 +116,17 @@ class AuthService extends ChangeNotifier {
     return _user;
   }
 
+  /// Send a password-reset email.
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      throw Exception(_getErrorMessage(e.code));
+    } catch (e) {
+      throw Exception('Failed to send reset email. Please try again.');
+    }
+  }
+
   /// Sign out.
   Future<void> signOut() async {
     print('🚪 signOut() called');

@@ -19,12 +19,42 @@ class _LoginPageState extends State<LoginPage> {
   bool _isSignUp = false; // Toggle between sign in and sign up
   bool _isLoading = false; // Local loading state to prevent rebuilds
   bool _obscurePassword = true; // Password visibility toggle
+  bool _resetEmailSent = false;
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _forgotPassword() async {
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty) {
+      setState(() => _error = 'Enter your email address above first.');
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _error = null;
+      _resetEmailSent = false;
+    });
+    try {
+      await context.read<AuthService>().sendPasswordResetEmail(email);
+      if (mounted) {
+        setState(() {
+          _resetEmailSent = true;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString().replaceAll('Exception: ', '');
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -222,6 +252,7 @@ class _LoginPageState extends State<LoginPage> {
                         _isSignUp = !_isSignUp;
                         _error = null;
                         _noAccountFound = false;
+                        _resetEmailSent = false;
                       });
                     },
                     child: Text(
@@ -230,6 +261,35 @@ class _LoginPageState extends State<LoginPage> {
                           : 'Don\'t have an account? Sign up',
                     ),
                   ),
+                  if (!_isSignUp) ...[  
+                    TextButton(
+                      onPressed: _isLoading ? null : _forgotPassword,
+                      child: const Text('Forgot password?'),
+                    ),
+                  ],
+                  if (_resetEmailSent) ...[  
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.green),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.check_circle_outline, color: Colors.green),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Password reset email sent! Check your inbox.',
+                              style: TextStyle(color: Colors.green, fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ]),
               ),
             ),
