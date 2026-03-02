@@ -16,25 +16,25 @@ class _OnboardingPageState extends State<OnboardingPage> {
 
   final List<_OnboardingSlideData> _slides = const [
     _OnboardingSlideData(
-      icon: Icons.language,
+      emoji: '🌍',
       title: 'Welcome to DailyFrase!',
       description:
           'Learn a new language one phrase at a time. Each session focuses on a single verb with up to 20 unique phrases — so you see it used in real context, not just memorized in isolation.\n\nFor best results, say each phrase out loud. Speaking activates muscle memory and trains your ear, making new vocabulary stick far faster than reading alone.',
     ),
     _OnboardingSlideData(
-      icon: Icons.menu,
+      emoji: '⚙️',
       title: 'Customize Your Settings',
       description:
           'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.',
     ),
     _OnboardingSlideData(
-      icon: Icons.swipe,
+      emoji: '👆',
       title: 'Three Buttons, Simple Flow',
       description:
           '"New" loads the next phrase (counts as learned). "Reveal" shows the translation without moving on. "Skip" moves to the next phrase without counting it. All 20 phrases share the same verb so you build real fluency fast.',
     ),
     _OnboardingSlideData(
-      icon: Icons.bar_chart,
+      emoji: '📈',
       title: 'Track Your Progress',
       description:
           'Every phrase you review is counted. Tap the stats icon anytime to see how far you\'ve come and keep the streak going!',
@@ -171,12 +171,12 @@ class _OnboardingPageState extends State<OnboardingPage> {
 // Data model for a slide
 // ---------------------------------------------------------------------------
 class _OnboardingSlideData {
-  final IconData icon;
+  final String emoji;
   final String title;
   final String description;
 
   const _OnboardingSlideData({
-    required this.icon,
+    required this.emoji,
     required this.title,
     required this.description,
   });
@@ -205,7 +205,7 @@ class _OnboardingSlide extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icon circle
+                // Emoji circle
                 Container(
                   width: 130,
                   height: 130,
@@ -213,7 +213,12 @@ class _OnboardingSlide extends StatelessWidget {
                     color: accentColor.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(data.icon, size: 64, color: accentColor),
+                  child: Center(
+                    child: Text(
+                      data.emoji,
+                      style: const TextStyle(fontSize: 60),
+                    ),
+                  ),
                 ),
 
                 const SizedBox(height: 48),

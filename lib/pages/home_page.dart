@@ -690,7 +690,24 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 8),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    leading: const Icon(Icons.help, color: Color(0xFF6366F1)),
+                    leading: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF6366F1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '?',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
                     title: const Text('View Tutorial', style: TextStyle(fontSize: 14)),
                     onTap: () {
                       Navigator.of(context).pop(); // close drawer
