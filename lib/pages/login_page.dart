@@ -282,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Password reset email sent! Check your inbox.',
+                              'Password reset email sent! Check your inbox and spam folder.',
                               style: TextStyle(color: Colors.green, fontSize: 14),
                             ),
                           ),
