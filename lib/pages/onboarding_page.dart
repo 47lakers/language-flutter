@@ -28,13 +28,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
           'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.',
     ),
     _OnboardingSlideData(
-      icon: Icons.touch_app,
+      icon: Icons.swipe,
       title: 'Three Buttons, Simple Flow',
       description:
           '"New" loads the next phrase (counts as learned). "Reveal" shows the translation without moving on. "Skip" moves to the next phrase without counting it. All 20 phrases share the same verb so you build real fluency fast.',
     ),
     _OnboardingSlideData(
-      icon: Icons.bar_chart_rounded,
+      icon: Icons.bar_chart,
       title: 'Track Your Progress',
       description:
           'Every phrase you review is counted. Tap the stats icon anytime to see how far you\'ve come and keep the streak going!',
