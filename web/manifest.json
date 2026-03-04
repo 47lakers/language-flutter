@@ -1,11 +1,11 @@
 {
-    "name": "flutter_firebase_mock_skel",
-    "short_name": "flutter_firebase_mock_skel",
+    "name": "DailyFrase",
+    "short_name": "DailyFrase",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0F1419",
+    "theme_color": "#6366F1",
+    "description": "Your daily dose of inspiration. A fresh phrase every day to keep you motivated and focused.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
