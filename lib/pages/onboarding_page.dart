@@ -31,7 +31,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       emoji: '👆',
       title: 'Three Buttons, Simple Flow',
       description:
-          '"New" loads the next phrase (counts as learned). "Reveal" shows the translation without moving on. "Skip" moves to the next phrase without counting it. All 20 phrases share the same verb so you build real fluency fast.',
+          '"New" loads the next phrase (counts as learned). "Reveal" shows the translation without moving on. "Skip" moves to the next phrase without counting it. All 20 phrases share the same verb so you build real fluency fast.\n\n✨ Each day you get 5 AI-generated sets — that\'s up to 100 fresh phrases daily, all created just for you.',
     ),
     _OnboardingSlideData(
       emoji: '📈',
