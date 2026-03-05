@@ -9,7 +9,7 @@ class User {
   User({required this.uid, required this.email});
 }
 
-/// AuthService using Firebase Authentication.
+/// AuthService using Firebase Authentication (Google Sign-In via web popup).
 class AuthService extends ChangeNotifier {
   final firebase_auth.FirebaseAuth _firebaseAuth = firebase_auth.FirebaseAuth.instance;
   final UserDatabaseService _userDb = UserDatabaseService();
@@ -18,15 +18,11 @@ class AuthService extends ChangeNotifier {
   bool _isNewUser = false;
 
   AuthService() {
-    // Listen to auth state changes
     _firebaseAuth.authStateChanges().listen((firebase_auth.User? firebaseUser) {
-      print('🔔 Auth state changed: ${firebaseUser?.uid ?? 'null'}');
       if (firebaseUser != null) {
         _user = User(uid: firebaseUser.uid, email: firebaseUser.email ?? '');
-        print('✅ User set: ${_user?.uid}');
       } else {
         _user = null;
-        print('❌ User cleared');
       }
       notifyListeners();
     });
@@ -36,107 +32,55 @@ class AuthService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isNewUser => _isNewUser;
 
-  /// Call this once the onboarding flow has been completed or skipped.
   void clearNewUserFlag() {
     _isNewUser = false;
     notifyListeners();
   }
 
-  /// Re-trigger the onboarding flow from anywhere in the app.
   void setNewUserFlag() {
     _isNewUser = true;
     notifyListeners();
   }
 
-  /// Sign in with email and password.
-  Future<User?> signIn(String email, String password) async {
+  /// Sign in with Google using a web popup.
+  Future<User?> signInWithGoogle() async {
     _setLoading(true);
     try {
-      print('🔐 Attempting sign in...');
-      final credential = await _firebaseAuth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final provider = firebase_auth.GoogleAuthProvider();
+      final credential = await _firebaseAuth.signInWithPopup(provider);
       if (credential.user != null) {
-        print('✅ Sign in successful: ${credential.user!.uid}');
         _user = User(
           uid: credential.user!.uid,
           email: credential.user!.email ?? '',
         );
-        
-        // Initialize user in Firestore if not exists
-        print('📝 Checking user data in Firestore...');
+        // Initialize user in Firestore if first time
         final userData = await _userDb.getUserData(_user!.uid);
         if (userData == null) {
-          print('🆕 Initializing new user in Firestore...');
           await _userDb.initializeUser(_user!.uid, _user!.email);
+          _isNewUser = true;
         }
-        print('✅ User data ready');
-      }
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      print('❌ Firebase auth error: ${e.code}');
-      _setLoading(false);
-      throw Exception(_getErrorMessage(e.code));
-    } catch (e) {
-      print('❌ Sign in error: $e');
-      _setLoading(false);
-      throw Exception('An error occurred during sign in');
-    }
-    _setLoading(false);
-    print('🎉 Sign in complete');
-    return _user;
-  }
-
-  /// Sign up with email and password.
-  Future<User?> signUp(String email, String password) async {
-    _setLoading(true);
-    try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      if (credential.user != null) {
-        _user = User(
-          uid: credential.user!.uid,
-          email: credential.user!.email ?? '',
-        );
-        
-        // Initialize user in Firestore
-        await _userDb.initializeUser(_user!.uid, _user!.email);
-        _isNewUser = true;
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
       _setLoading(false);
-      throw Exception(_getErrorMessage(e.code));
+      if (e.code == 'popup-closed-by-user' || e.code == 'cancelled-popup-request') {
+        return null; // User dismissed — not an error
+      }
+      throw Exception('Sign in failed. Please try again.');
     } catch (e) {
       _setLoading(false);
-      throw Exception('An error occurred during sign up');
+      throw Exception('Sign in failed. Please try again.');
     }
     _setLoading(false);
     return _user;
-  }
-
-  /// Send a password-reset email.
-  Future<void> sendPasswordResetEmail(String email) async {
-    try {
-      await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
-    } on firebase_auth.FirebaseAuthException catch (e) {
-      throw Exception(_getErrorMessage(e.code));
-    } catch (e) {
-      throw Exception('Failed to send reset email. Please try again.');
-    }
   }
 
   /// Sign out.
   Future<void> signOut() async {
-    print('🚪 signOut() called');
-    print('Stack trace: ${StackTrace.current}');
     _setLoading(true);
     try {
       await _firebaseAuth.signOut();
       _user = null;
       notifyListeners();
-      print('✅ Sign out complete');
     } catch (e) {
       print('Error signing out: $e');
     } finally {
@@ -147,26 +91,7 @@ class AuthService extends ChangeNotifier {
   void _setLoading(bool v) {
     if (_isLoading != v) {
       _isLoading = v;
-      print('⏳ Loading state changed: $v');
       notifyListeners();
-    }
-  }
-
-  String _getErrorMessage(String code) {
-    switch (code) {
-      case 'user-not-found':
-      case 'invalid-credential':
-        return 'NO_ACCOUNT_FOUND';
-      case 'wrong-password':
-        return 'Wrong password. Please try again.';
-      case 'email-already-in-use':
-        return 'An account already exists with this email.';
-      case 'invalid-email':
-        return 'Invalid email address.';
-      case 'weak-password':
-        return 'Password is too weak.';
-      default:
-        return 'Authentication failed. Please try again.';
     }
   }
 }
