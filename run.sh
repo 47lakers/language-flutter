@@ -1,12 +1,13 @@
 #!/bin/bash
 # Convenience script to run Flutter in dev or prod mode
 # Usage: ./run.sh [env] [device]
-#   env: dev (default) | prod
+#   env: dev (default) | prod | deploy
 #   device: chrome (default) | ios | android | macos
 # Examples:
 #   ./run.sh              → dev on chrome
 #   ./run.sh dev ios      → dev on iOS
 #   ./run.sh prod         → prod on chrome (reads PROD_API_KEY from .env.local)
+#   ./run.sh deploy       → build prod + deploy to Firebase Hosting
 
 ENV=${1:-dev}
 PLATFORM=${2:-chrome}
@@ -19,7 +20,20 @@ fi
 
 echo "🌿 Branch: $BRANCH"
 
-if [ "$ENV" = "prod" ]; then
+if [ "$ENV" = "deploy" ]; then
+  if [ -z "$PROD_API_KEY" ]; then
+    echo "❌ PROD_API_KEY is not set. Add it to .env.local"
+    exit 1
+  fi
+  echo "🏗️  Building for production..."
+  flutter build web \
+    --dart-define=ENV=prod \
+    --dart-define="PROD_API_KEY=$PROD_API_KEY"
+  echo "🚀 Deploying to Firebase Hosting..."
+  firebase deploy --only hosting
+  echo "✅ Deployed! Visit https://dailyfrase.com"
+
+elif [ "$ENV" = "prod" ]; then
   if [ -z "$PROD_API_KEY" ]; then
     echo "❌ PROD_API_KEY is not set. Add it to .env.local"
     exit 1
