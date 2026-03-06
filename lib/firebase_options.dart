@@ -99,7 +99,7 @@ class DefaultFirebaseOptions {
     appId: '1:713216071550:web:740ac951ea808d09fd852f',
     messagingSenderId: '713216071550',
     projectId: 'language-firebase-d5667',
-    authDomain: 'language-firebase-d5667.firebaseapp.com',
+    authDomain: 'dailyfrase.com',
     storageBucket: 'language-firebase-d5667.firebasestorage.app',
     measurementId: 'G-4QQWLGHR1S',
   );
