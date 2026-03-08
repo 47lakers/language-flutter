@@ -616,6 +616,17 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   const SizedBox(height: 24),
+                  _buildLabel('Sentence complexity'),
+                  const SizedBox(height: 8),
+                  _buildDropdown(
+                    value: _level,
+                    items: ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'],
+                    onChanged: (val) {
+                      setState(() => _level = val!);
+                      _clearSentenceCache();
+                    },
+                  ),
+                  const SizedBox(height: 24),
                   _buildLabel('Verb focus'),
                   const SizedBox(height: 8),
                   TextField(

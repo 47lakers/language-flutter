@@ -25,7 +25,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       emoji: '⚙️',
       title: 'Customize Your Settings',
       description:
-          'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.',
+          'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nUse the "Sentence complexity" setting to match your level — from A1 (beginner) all the way to C2 (mastery).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.',
     ),
     _OnboardingSlideData(
       emoji: '👆',
