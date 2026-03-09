@@ -25,13 +25,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
       emoji: '⚙️',
       title: 'Customize Your Settings',
       description:
-          'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nUse the "Sentence complexity" setting to match your level — from A1 (beginner) all the way to C2 (mastery).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.',
+          'Tap the ☰ menu in the top-left corner to open settings. Choose your language pair, tenses, and focus verb (optional).\n\nUse the "Sentence complexity" setting to match your level — from A1 (beginner) all the way to C2 (mastery).\n\nYou can also toggle "Show English First" to see the translation first and practice recalling the phrase in your target language.\n\nSpotted a bug or have a suggestion? Use "Send Feedback" in the menu — we\'d love to hear from you.',
     ),
     _OnboardingSlideData(
       emoji: '👆',
       title: 'Three Buttons, Simple Flow',
       description:
-          '"New" loads the next phrase (counts as learned). "Reveal" shows the translation without moving on. "Skip" moves to the next phrase without counting it. All 20 phrases share the same verb so you build real fluency fast.\n\n✨ Each day you get 5 AI-generated sets — that\'s up to 100 fresh phrases daily, all created just for you.',
+'\"New\" moves to the next phrase without saving. \"Reveal\" shows the translation so you can check yourself. \"Save\" records the phrase to your stats when you need to review it later — up to 20 phrases per tense of each verb can be saved.\n\nAll 20 phrases in a set share the same verb — so you build real fluency through repetition and context.\n\n✨ Each day you get 5 AI-generated sets — that\'s up to 100 fresh phrases daily, all created just for you.',
     ),
     _OnboardingSlideData(
       emoji: '📈',

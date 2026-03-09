@@ -212,23 +212,7 @@ class StatsPage extends StatelessWidget {
                       ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${details.total} total',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
+
               ],
             ),
             if (tensesList.isNotEmpty) ...[
@@ -238,7 +222,6 @@ class StatsPage extends StatelessWidget {
               ...tensesList.map((tenseEntry) => _buildExpandableTense(
                     context,
                     tenseEntry.key,
-                    tenseEntry.value,
                     details.phrases[tenseEntry.key] ?? [],
                   )),
             ],
@@ -251,7 +234,6 @@ class StatsPage extends StatelessWidget {
   Widget _buildExpandableTense(
     BuildContext context,
     String tense,
-    int count,
     List<Map<String, String>> phrases,
   ) {
     return Theme(
@@ -269,26 +251,12 @@ class StatsPage extends StatelessWidget {
                     : const Color(0xFFEEF2FF),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    tense,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    count.toString(),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                ],
+              child: Text(
+                tense,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],

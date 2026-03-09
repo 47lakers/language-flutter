@@ -202,6 +202,10 @@ class UserDatabaseService {
         final isDupe = tensePhrases.any((e) => e['p'] == newPhrase['p']);
         if (!isDupe) {
           tensePhrases.add(newPhrase);
+          // Keep only the most recent 20 phrases per verb/tense
+          if (tensePhrases.length > 20) {
+            tensePhrases.removeRange(0, tensePhrases.length - 20);
+          }
         } else {
           isNewPhrase = false;
           print('⚠️ Duplicate phrase detected, skipping count increment: ${newPhrase['p']}');
