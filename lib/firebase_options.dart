@@ -92,16 +92,16 @@ class DefaultFirebaseOptions {
     measurementId: 'G-E50KYVXQ4N',
   );
 
-  // ============ PRODUCTION FIREBASE OPTIONS (language-firebase-d5667) ============
+  // ============ PRODUCTION FIREBASE OPTIONS (dailyfrase-app) ============
 
   static const FirebaseOptions prodWeb = FirebaseOptions(
-    apiKey: 'AIzaSyAGoSyly_M8e2-PFed3VZS_qiFRrVq0Wrc',
-    appId: '1:713216071550:web:740ac951ea808d09fd852f',
-    messagingSenderId: '713216071550',
-    projectId: 'language-firebase-d5667',
-    authDomain: 'dailyfrase.com',
-    storageBucket: 'language-firebase-d5667.firebasestorage.app',
-    measurementId: 'G-4QQWLGHR1S',
+    apiKey: 'AIzaSyBaWnFEwUKM2rk5Zc-uCAgtSLclds5mrRI',
+    appId: '1:950991988572:web:d79006877bc984a6728399',
+    messagingSenderId: '950991988572',
+    projectId: 'dailyfrase-app',
+    authDomain: 'dailyfrase-app.firebaseapp.com',
+    storageBucket: 'dailyfrase-app.firebasestorage.app',
+    measurementId: 'G-G4D836F24G',
   );
 
   static const FirebaseOptions prodAndroid = FirebaseOptions(
@@ -113,11 +113,11 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions prodIos = FirebaseOptions(
-    apiKey: 'AIzaSyBw0KIwUnNNik2uCgo2BkRpos5f9YZeq9w',
-    appId: '1:713216071550:ios:4c78a71f809fdccefd852f',
-    messagingSenderId: '713216071550',
-    projectId: 'language-firebase-d5667',
-    storageBucket: 'language-firebase-d5667.firebasestorage.app',
+    apiKey: 'AIzaSyDBZTv4Z-lNJgMpZ6rwfhDtAorZVM3wRQI',
+    appId: '1:950991988572:ios:a999eed8ff1afd07728399',
+    messagingSenderId: '950991988572',
+    projectId: 'dailyfrase-app',
+    storageBucket: 'dailyfrase-app.firebasestorage.app',
     iosBundleId: 'com.ira.flutterapp',
   );
 
