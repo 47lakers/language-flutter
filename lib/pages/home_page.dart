@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform, SocketException;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'dart:html' as html;
@@ -212,68 +213,54 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _nextSentence() async {
-    if (_sentences != null && _sentences!.isNotEmpty) {
-      final currentSentence = _sentences![_currentSentenceIndex];
-      final verb = currentSentence['verb'] as String? ?? '';
-      final tense = currentSentence['tense'] as String? ?? 'present';
-      final phrase = currentSentence['target_text'] as String? ?? '';
-      final phraseTranslation = currentSentence['translation_text'] as String? ?? '';
-      final verbTranslation = currentSentence['verb_translation'] as String? ?? '';
-      
-      // Move to next sentence in the batch
+  // Skip to the next sentence without saving (or fetch first batch if none loaded)
+  void _newSentence() {
+    if (_sentences == null || _sentences!.isEmpty) {
+      _fetchNewBatch();
+    } else {
       setState(() {
         _phrasesLearned++;
         _currentSentenceIndex++;
         _showTranslation = false;
-        
-        // If we've gone through all sentences, fetch a new batch
         if (_currentSentenceIndex >= _sentences!.length) {
           _currentSentenceIndex = 0;
           _fetchNewBatch();
         }
       });
-      
-      // Record in database
-      final auth = context.read<AuthService>();
-      if (auth.currentUser != null && verb.isNotEmpty && tense.isNotEmpty) {
-        print('Recording: verb=$verb, tense=$tense, uid=${auth.currentUser!.uid}');
-        try {
-          await _userDb.recordSentenceComplete(
-            auth.currentUser!.uid,
-            verb.toLowerCase(),
-            tense.toLowerCase(),
-            _firstLanguage,
-            phrase: phrase,
-            phraseTranslation: phraseTranslation,
-            verbTranslation: verbTranslation,
-          );
-          print('Successfully recorded sentence');
-        } catch (e) {
-          print('Error recording sentence: $e');
-        }
-      } else if (tense.isEmpty) {
-        print('Skipping recording: tense is empty for verb=$verb');
-      }
-    } else {
-      // No sentences yet, fetch the first batch
-      _fetchNewBatch();
     }
   }
 
-  void _skipSentence() {
-    if (_sentences != null && _sentences!.isNotEmpty) {
-      // Move to next sentence WITHOUT incrementing phrases learned
-      setState(() {
-        _currentSentenceIndex++;
-        _showTranslation = false;
-        
-        // If we've gone through all sentences, fetch a new batch
-        if (_currentSentenceIndex >= _sentences!.length) {
-          _currentSentenceIndex = 0;
-          _fetchNewBatch();
-        }
-      });
+  // Save the current phrase to the DB without advancing
+  void _saveSentence() async {
+    if (_sentences == null || _sentences!.isEmpty) return;
+
+    final currentSentence = _sentences![_currentSentenceIndex];
+    final verb = currentSentence['verb'] as String? ?? '';
+    final tense = currentSentence['tense'] as String? ?? 'present';
+    final phrase = currentSentence['target_text'] as String? ?? '';
+    final phraseTranslation = currentSentence['translation_text'] as String? ?? '';
+    final verbTranslation = currentSentence['verb_translation'] as String? ?? '';
+
+    // Record in database
+    final auth = context.read<AuthService>();
+    if (auth.currentUser != null && verb.isNotEmpty && tense.isNotEmpty) {
+      print('Recording: verb=$verb, tense=$tense, uid=${auth.currentUser!.uid}');
+      try {
+        await _userDb.recordSentenceComplete(
+          auth.currentUser!.uid,
+          verb.toLowerCase(),
+          tense.toLowerCase(),
+          _firstLanguage,
+          phrase: phrase,
+          phraseTranslation: phraseTranslation,
+          verbTranslation: verbTranslation,
+        );
+        print('Successfully recorded sentence');
+      } catch (e) {
+        print('Error recording sentence: $e');
+      }
+    } else if (tense.isEmpty) {
+      print('Skipping recording: tense is empty for verb=$verb');
     }
   }
 
@@ -457,11 +444,11 @@ class _HomePageState extends State<HomePage> {
                       Row(
                         children: [
                           Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: _isLoading ? null : _nextSentence,
-                              icon: const Icon(Icons.add, size: 18),
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _newSentence,
+                              icon: const Icon(Icons.arrow_forward, size: 18),
                               label: const Text('New'),
-                              style: ElevatedButton.styleFrom(
+                              style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 18),
                               ),
                             ),
@@ -479,12 +466,14 @@ class _HomePageState extends State<HomePage> {
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: currentSentence != null && !_isLoading ? _skipSentence : null,
-                              icon: const Icon(Icons.skip_next, size: 18),
-                              label: const Text('Skip'),
-                              style: OutlinedButton.styleFrom(
+                            child: ElevatedButton.icon(
+                              onPressed: currentSentence != null && !_isLoading ? _saveSentence : null,
+                              icon: const Icon(Icons.bookmark_add_outlined, size: 18),
+                              label: const Text('Save'),
+                              style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 18),
+                                backgroundColor: const Color(0xFF22C55E),
+                                foregroundColor: Colors.white,
                               ),
                             ),
                           ),
@@ -725,12 +714,147 @@ class _HomePageState extends State<HomePage> {
                       context.read<AuthService>().setNewUserFlag();
                     },
                   ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.feedback_outlined, size: 24, color: Color(0xFF6366F1)),
+                    title: const Text('Send Feedback', style: TextStyle(fontSize: 14)),
+                    onTap: () {
+                      Navigator.of(context).pop(); // close drawer
+                      _showFeedbackSheet();
+                    },
+                  ),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  void _showFeedbackSheet() {
+    final controller = TextEditingController();
+    bool submitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 24,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Send Feedback',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(ctx).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Spotted a bug or have a suggestion? Let us know.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(ctx).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    maxLines: 5,
+                    autofocus: true,
+                    style: TextStyle(
+                      color: Theme.of(ctx).textTheme.bodyLarge?.color,
+                      fontSize: 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Write your feedback here...',
+                      hintStyle: TextStyle(color: Theme.of(ctx).hintColor, fontSize: 13),
+                      filled: true,
+                      fillColor: Theme.of(ctx).inputDecorationTheme.fillColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(ctx).dividerColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(ctx).dividerColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.all(16),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              final text = controller.text.trim();
+                              if (text.isEmpty) return;
+                              setSheetState(() => submitting = true);
+                              try {
+                                final auth = context.read<AuthService>();
+                                await FirebaseFirestore.instance
+                                    .collection('feedback')
+                                    .add({
+                                  'message': text,
+                                  'email': auth.currentUser?.email ?? 'anonymous',
+                                  'uid': auth.currentUser?.uid ?? '',
+                                  'createdAt': FieldValue.serverTimestamp(),
+                                });
+                                if (ctx.mounted) Navigator.of(ctx).pop();
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Thanks for your feedback!')),
+                                  );
+                                }
+                              } catch (e) {
+                                setSheetState(() => submitting = false);
+                                if (ctx.mounted) {
+                                  ScaffoldMessenger.of(ctx).showSnackBar(
+                                    const SnackBar(content: Text('Failed to send. Please try again.')),
+                                  );
+                                }
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: submitting
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Submit'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
