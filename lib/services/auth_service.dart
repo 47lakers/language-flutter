@@ -42,6 +42,82 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Sign in with email and password.
+  Future<User?> signInWithEmail(String email, String password) async {
+    _setLoading(true);
+    try {
+      final credential = await _firebaseAuth.signInWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      if (credential.user != null) {
+        _user = User(uid: credential.user!.uid, email: credential.user!.email ?? '');
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      _setLoading(false);
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          throw Exception('Incorrect email or password.');
+        case 'too-many-requests':
+          throw Exception('Too many attempts. Please try again later.');
+        default:
+          throw Exception('Sign in failed. Please try again.');
+      }
+    } catch (e) {
+      _setLoading(false);
+      throw Exception('Sign in failed. Please try again.');
+    }
+    _setLoading(false);
+    return _user;
+  }
+
+  /// Register with email and password.
+  Future<User?> signUpWithEmail(String email, String password) async {
+    _setLoading(true);
+    try {
+      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      if (credential.user != null) {
+        _user = User(uid: credential.user!.uid, email: credential.user!.email ?? '');
+        await _userDb.initializeUser(_user!.uid, _user!.email);
+        _isNewUser = true;
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      _setLoading(false);
+      switch (e.code) {
+        case 'email-already-in-use':
+          throw Exception('An account with this email already exists.');
+        case 'weak-password':
+          throw Exception('Password must be at least 6 characters.');
+        case 'invalid-email':
+          throw Exception('Please enter a valid email address.');
+        default:
+          throw Exception('Sign up failed. Please try again.');
+      }
+    } catch (e) {
+      _setLoading(false);
+      throw Exception('Sign up failed. Please try again.');
+    }
+    _setLoading(false);
+    return _user;
+  }
+
+  /// Send password reset email.
+  Future<void> sendPasswordResetEmail(String email) async {
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email.trim());
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        throw Exception('No account found with this email.');
+      }
+      throw Exception('Failed to send reset email. Please try again.');
+    }
+  }
+
   /// Sign in with Google using a web popup.
   Future<User?> signInWithGoogle() async {
     _setLoading(true);
