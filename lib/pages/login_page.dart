@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
@@ -32,18 +31,6 @@ class _LoginPageState extends State<LoginPage> {
   void _clearMessages() {
     _error = null;
     _successMessage = null;
-  }
-
-  Future<void> _signInWithGoogle() async {
-    if (_isLoading) return;
-    setState(() { _isLoading = true; _clearMessages(); });
-    try {
-      await context.read<AuthService>().signInWithGoogle();
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   Future<void> _submitEmailForm() async {
@@ -234,37 +221,7 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
 
-                  // Divider
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text('or', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.4))),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
 
-                  // Google sign in
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: OutlinedButton.icon(
-                      onPressed: _isLoading ? null : _signInWithGoogle,
-                      icon: SvgPicture.network(
-                        'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
-                        height: 22,
-                        width: 22,
-                        placeholderBuilder: (_) => const SizedBox(width: 22, height: 22),
-                      ),
-                      label: const Text('Continue with Google', style: TextStyle(fontSize: 16)),
-                      style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
