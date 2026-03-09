@@ -720,7 +720,14 @@ class _HomePageState extends State<HomePage> {
                     title: const Text('Send Feedback', style: TextStyle(fontSize: 14)),
                     onTap: () {
                       Navigator.of(context).pop(); // close drawer
-                      _showFeedbackSheet();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => FeedbackPage(
+                            userEmail: context.read<AuthService>().currentUser?.email ?? 'anonymous',
+                            uid: context.read<AuthService>().currentUser?.uid ?? '',
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ],
@@ -729,132 +736,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-    );
-  }
-
-  void _showFeedbackSheet() {
-    final controller = TextEditingController();
-    bool submitting = false;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 32,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Send Feedback',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(ctx).textTheme.bodyLarge?.color,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Spotted a bug or have a suggestion? Let us know.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(ctx).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller,
-                    maxLines: 5,
-                    autofocus: true,
-                    style: TextStyle(
-                      color: Theme.of(ctx).textTheme.bodyLarge?.color,
-                      fontSize: 14,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Write your feedback here...',
-                      hintStyle: TextStyle(color: Theme.of(ctx).hintColor, fontSize: 13),
-                      filled: true,
-                      fillColor: Theme.of(ctx).inputDecorationTheme.fillColor,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(ctx).dividerColor),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(ctx).dividerColor),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
-                      ),
-                      contentPadding: const EdgeInsets.all(16),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: submitting
-                          ? null
-                          : () async {
-                              final text = controller.text.trim();
-                              if (text.isEmpty) return;
-                              setSheetState(() => submitting = true);
-                              try {
-                                final auth = context.read<AuthService>();
-                                await FirebaseFirestore.instance
-                                    .collection('feedback')
-                                    .add({
-                                  'message': text,
-                                  'email': auth.currentUser?.email ?? 'anonymous',
-                                  'uid': auth.currentUser?.uid ?? '',
-                                  'createdAt': FieldValue.serverTimestamp(),
-                                });
-                                if (ctx.mounted) Navigator.of(ctx).pop();
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Thanks for your feedback!')),
-                                  );
-                                }
-                              } catch (e) {
-                                setSheetState(() => submitting = false);
-                                if (ctx.mounted) {
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                    const SnackBar(content: Text('Failed to send. Please try again.')),
-                                  );
-                                }
-                              }
-                            },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: submitting
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Submit'),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -1039,6 +920,127 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Feedback page
+// ---------------------------------------------------------------------------
+class FeedbackPage extends StatefulWidget {
+  final String userEmail;
+  final String uid;
+
+  const FeedbackPage({super.key, required this.userEmail, required this.uid});
+
+  @override
+  State<FeedbackPage> createState() => _FeedbackPageState();
+}
+
+class _FeedbackPageState extends State<FeedbackPage> {
+  final _controller = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Send Feedback')),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Spotted a bug or have a suggestion? Let us know.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _controller,
+                maxLines: 6,
+                autofocus: true,
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                  fontSize: 14,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'Write your feedback here...',
+                  hintStyle: TextStyle(color: Theme.of(context).hintColor, fontSize: 13),
+                  filled: true,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF6366F1), width: 2),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitting
+                      ? null
+                      : () async {
+                          final text = _controller.text.trim();
+                          if (text.isEmpty) return;
+                          setState(() => _submitting = true);
+                          try {
+                            await FirebaseFirestore.instance.collection('feedback').add({
+                              'message': text,
+                              'email': widget.userEmail,
+                              'uid': widget.uid,
+                              'createdAt': FieldValue.serverTimestamp(),
+                            });
+                            if (mounted) {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Thanks for your feedback!')),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() => _submitting = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Failed to send. Please try again.')),
+                              );
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Submit'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

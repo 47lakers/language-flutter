@@ -31,13 +31,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
       emoji: '👆',
       title: 'Three Buttons, Simple Flow',
       description:
-'\"New\" moves to the next phrase without saving. \"Reveal\" shows the translation so you can check yourself. \"Save\" records the phrase to your stats when you need to review it later — up to 20 phrases per tense of each verb can be saved.\n\nAll 20 phrases in a set share the same verb — so you build real fluency through repetition and context.\n\n✨ Each day you get 5 AI-generated sets — that\'s up to 100 fresh phrases daily, all created just for you.',
+          '\"New\" moves to the next phrase without saving. \"Reveal\" shows the translation so you can check yourself. \"Save\" adds the phrase to your stats for later review.\n\nAll 20 phrases in a set share the same verb — so you build real fluency through repetition and context.\n\n✨ Each day you get 5 AI-generated sets — that\'s up to 100 fresh phrases daily, all created just for you.',
     ),
     _OnboardingSlideData(
       emoji: '📈',
       title: 'Track Your Progress',
       description:
-          'Every phrase you review is counted. Tap the stats icon anytime to see how far you\'ve come and keep the streak going!',
+          'Every phrase you save appears in your stats, grouped by verb and tense — so you can revisit and review exactly what you\'ve been practicing. Tap the stats card anytime to see your progress.',
     ),
   ];
 
