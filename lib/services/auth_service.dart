@@ -83,8 +83,12 @@ class AuthService extends ChangeNotifier {
       );
       if (credential.user != null) {
         _user = User(uid: credential.user!.uid, email: credential.user!.email ?? '');
-        await _userDb.initializeUser(_user!.uid, _user!.email);
         _isNewUser = true;
+        try {
+          await _userDb.initializeUser(_user!.uid, _user!.email);
+        } catch (dbError) {
+          debugPrint('Warning: failed to initialize user in Firestore: $dbError');
+        }
       }
     } on firebase_auth.FirebaseAuthException catch (e) {
       _setLoading(false);
