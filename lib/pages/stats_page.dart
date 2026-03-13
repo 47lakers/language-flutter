@@ -66,7 +66,7 @@ class StatsPage extends StatelessWidget {
                           children: [
                             _buildStatColumn(
                               context,
-                              'Total Sentences',
+                              'Phrases Saved',
                               userData.totalSentences.toString(),
                               Icons.library_books,
                             ),
@@ -75,6 +75,14 @@ class StatsPage extends StatelessWidget {
                               'Verbs Learned',
                               userData.verbsLearned.length.toString(),
                               Icons.text_fields,
+                            ),
+                            _buildStatColumn(
+                              context,
+                              'Day Streak',
+                              userData.currentStreak > 0
+                                  ? '🔥 ${userData.currentStreak}'
+                                  : '—',
+                              Icons.local_fire_department,
                             ),
                           ],
                         ),

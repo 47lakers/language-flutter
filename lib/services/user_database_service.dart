@@ -52,6 +52,8 @@ class UserData {
   final int totalSentences;
   final Map<String, VerbDetails> verbsLearned; // verb -> VerbDetails
   final DateTime lastUpdated;
+  final int currentStreak;
+  final String lastActiveDate; // 'YYYY-MM-DD'
 
   UserData({
     required this.uid,
@@ -59,6 +61,8 @@ class UserData {
     this.totalSentences = 0,
     Map<String, VerbDetails>? verbsLearned,
     DateTime? lastUpdated,
+    this.currentStreak = 0,
+    this.lastActiveDate = '',
   })  : verbsLearned = verbsLearned ?? {},
         lastUpdated = lastUpdated ?? DateTime.now();
 
@@ -69,6 +73,8 @@ class UserData {
       'totalSentences': totalSentences,
       'verbsLearned': verbsLearned.map((key, value) => MapEntry(key, value.toMap())),
       'lastUpdated': Timestamp.fromDate(lastUpdated),
+      'currentStreak': currentStreak,
+      'lastActiveDate': lastActiveDate,
     };
   }
 
@@ -87,12 +93,16 @@ class UserData {
       totalSentences: map['totalSentences'] ?? 0,
       verbsLearned: verbsLearned,
       lastUpdated: (map['lastUpdated'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      currentStreak: map['currentStreak'] as int? ?? 0,
+      lastActiveDate: map['lastActiveDate'] as String? ?? '',
     );
   }
 
   UserData copyWith({
     int? totalSentences,
     Map<String, VerbDetails>? verbsLearned,
+    int? currentStreak,
+    String? lastActiveDate,
   }) {
     return UserData(
       uid: uid,
@@ -100,6 +110,8 @@ class UserData {
       totalSentences: totalSentences ?? this.totalSentences,
       verbsLearned: verbsLearned ?? this.verbsLearned,
       lastUpdated: DateTime.now(),
+      currentStreak: currentStreak ?? this.currentStreak,
+      lastActiveDate: lastActiveDate ?? this.lastActiveDate,
     );
   }
 }
@@ -138,8 +150,9 @@ class UserDatabaseService {
     });
   }
 
-  // Record a completed sentence with verb, tense, and optionally the phrase/translation
-  Future<void> recordSentenceComplete(
+  // Record a completed sentence with verb, tense, and optionally the phrase/translation.
+  // Returns {totalSentences, streak} after the update.
+  Future<Map<String, int>> recordSentenceComplete(
     String uid,
     String verb,
     String tense,
@@ -151,10 +164,18 @@ class UserDatabaseService {
     // Validate inputs
     if (verb.isEmpty || tense.isEmpty) {
       print('Invalid data: verb=$verb, tense=$tense - skipping');
-      return;
+      return {'totalSentences': 0, 'streak': 0};
     }
 
     final userRef = _firestore.collection('users').doc(uid);
+
+    // Compute today/yesterday strings for streak logic
+    final now = DateTime.now();
+    final todayStr =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayStr =
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
     // Get current data or create new
     final doc = await userRef.get();
@@ -178,8 +199,11 @@ class UserDatabaseService {
             if (newPhrase != null) 'phrases': {tense: [newPhrase]},
           }
         },
+        'currentStreak': 1,
+        'lastActiveDate': todayStr,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
+      return {'totalSentences': 1, 'streak': 1};
     } else {
       // Update existing - read current verb data
       final data = doc.data()!;
@@ -213,7 +237,7 @@ class UserDatabaseService {
       }
 
       // Only increment counts if this is a genuinely new phrase
-      if (!isNewPhrase) return;
+      if (!isNewPhrase) return {'totalSentences': data['totalSentences'] as int? ?? 0, 'streak': data['currentStreak'] as int? ?? 0};
 
       tensesMap[tense] = (tensesMap[tense] ?? 0) + 1;
 
@@ -221,6 +245,20 @@ class UserDatabaseService {
       final storedVerbTranslation = verbTranslation.isNotEmpty
           ? verbTranslation
           : (verbData?['verbTranslation'] as String? ?? '');
+
+      // Compute new streak
+      final storedLastActiveDate = data['lastActiveDate'] as String? ?? '';
+      final storedStreak = data['currentStreak'] as int? ?? 0;
+      int newStreak;
+      if (storedLastActiveDate == todayStr) {
+        newStreak = storedStreak; // already active today, no change
+      } else if (storedLastActiveDate == yesterdayStr) {
+        newStreak = storedStreak + 1; // consecutive day
+      } else {
+        newStreak = 1; // streak broken or first save
+      }
+
+      final newTotal = (data['totalSentences'] as int? ?? 0) + 1;
 
       await userRef.update({
         'totalSentences': FieldValue.increment(1),
@@ -231,9 +269,14 @@ class UserDatabaseService {
           'verbTranslation': storedVerbTranslation,
           'phrases': phrasesMap,
         },
+        'currentStreak': newStreak,
+        'lastActiveDate': todayStr,
         'lastUpdated': FieldValue.serverTimestamp(),
       });
+      return {'totalSentences': newTotal, 'streak': newStreak};
     }
+    // Fallback (should not be reached)
+    return {'totalSentences': 0, 'streak': 0};
   }
 
   // Initialize new user

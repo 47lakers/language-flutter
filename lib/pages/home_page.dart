@@ -34,6 +34,11 @@ class _HomePageState extends State<HomePage> {
   int _phrasesLearned = 0;
   late final DateTime _mountTime; // Track when page was mounted
 
+  // Stats displayed on home card
+  int _totalSavedPhrases = 0;
+  int _totalVerbs = 0;
+  int _currentStreak = 0;
+
   // Settings
   String _firstLanguage = 'Spanish';
   String _secondLanguage = 'English';
@@ -49,6 +54,46 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> _loadUserStats() async {
+    final auth = context.read<AuthService>();
+    if (auth.currentUser == null) return;
+    try {
+      final data = await _userDb.getUserData(auth.currentUser!.uid);
+      if (data != null && mounted) {
+        setState(() {
+          _totalSavedPhrases = data.totalSentences;
+          _totalVerbs = data.verbsLearned.length;
+          _currentStreak = data.currentStreak;
+        });
+      }
+    } catch (e) {
+      print('Error loading user stats: $e');
+    }
+  }
+
+  void _checkAndShowMilestone(BuildContext ctx, int total, int streak) {
+    const phraseMilestones = [10, 25, 50, 100, 250, 500, 1000];
+    const streakMilestones = [3, 7, 14, 30];
+    String? message;
+
+    if (phraseMilestones.contains(total)) {
+      message = '🎉 $total phrases saved! Keep it up!';
+    } else if (streakMilestones.contains(streak)) {
+      message = '🔥 $streak day streak! You\'re on a roll!';
+    }
+
+    if (message != null && mounted) {
+      ScaffoldMessenger.of(ctx).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 15),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF6366F1),
+        ),
+      );
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -57,7 +102,8 @@ class _HomePageState extends State<HomePage> {
     try {
       _api = ApiService(baseUrl: EnvironmentConfig.baseUrl, appKey: EnvironmentConfig.apiKey);
       _userDb = UserDatabaseService();
-      
+      _loadUserStats();
+
       // Initialize TTS
       _flutterTts = FlutterTts();
       _initTts();
@@ -246,7 +292,7 @@ class _HomePageState extends State<HomePage> {
     if (auth.currentUser != null && verb.isNotEmpty && tense.isNotEmpty) {
       print('Recording: verb=$verb, tense=$tense, uid=${auth.currentUser!.uid}');
       try {
-        await _userDb.recordSentenceComplete(
+        final result = await _userDb.recordSentenceComplete(
           auth.currentUser!.uid,
           verb.toLowerCase(),
           tense.toLowerCase(),
@@ -255,7 +301,19 @@ class _HomePageState extends State<HomePage> {
           phraseTranslation: phraseTranslation,
           verbTranslation: verbTranslation,
         );
-        print('Successfully recorded sentence');
+        print('Successfully recorded sentence: $result');
+        if (mounted) {
+          final newTotal = result['totalSentences'] ?? _totalSavedPhrases;
+          final newStreak = result['streak'] ?? _currentStreak;
+          // Reload verb count from DB; update totals optimistically
+          final userData = await _userDb.getUserData(auth.currentUser!.uid);
+          setState(() {
+            _totalSavedPhrases = newTotal;
+            _currentStreak = newStreak;
+            if (userData != null) _totalVerbs = userData.verbsLearned.length;
+          });
+          _checkAndShowMilestone(context, newTotal, newStreak);
+        }
       } catch (e) {
         print('Error recording sentence: $e');
       }
@@ -420,7 +478,9 @@ class _HomePageState extends State<HomePage> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        'See your progress and learned verbs',
+                                        _totalSavedPhrases == 0
+                                            ? 'Start saving phrases to track progress'
+                                            : '$_totalSavedPhrases phrases · $_totalVerbs verbs${_currentStreak > 0 ? ' · 🔥 $_currentStreak day streak' : ''}',
                                         style: TextStyle(
                                           fontSize: 14,
                                           color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
@@ -536,12 +596,24 @@ class _HomePageState extends State<HomePage> {
                       ] else if (_isLoading) ...[
                         const CircularProgressIndicator(),
                       ] else ...[
-                        Text(
-                          'Click "New sentence" to start',
-                          style: TextStyle(
-                            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                            fontSize: 16,
-                          ),
+                        Column(
+                          children: [
+                            Text(
+                              'Tap "New" to start your session',
+                              style: TextStyle(
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                                fontSize: 16,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '5 minutes a day is all it takes',
+                              style: TextStyle(
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ],
