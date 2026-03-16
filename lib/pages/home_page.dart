@@ -476,16 +476,18 @@ class _HomePageState extends State<HomePage> {
                                           color: Theme.of(context).textTheme.bodyLarge?.color,
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _totalSavedPhrases == 0
-                                            ? 'Start saving phrases to track progress'
-                                            : '$_totalSavedPhrases phrases · $_totalVerbs verbs${_currentStreak > 0 ? ' · 🔥 $_currentStreak day streak' : ''}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                                      const SizedBox(height: 8),
+                                      if (_totalSavedPhrases > 0)
+                                        Wrap(
+                                          spacing: 6,
+                                          runSpacing: 6,
+                                          children: [
+                                            _buildStatChip('📚 $_totalSavedPhrases phrases'),
+                                            _buildStatChip('🔤 $_totalVerbs verbs'),
+                                            if (_currentStreak > 0)
+                                              _buildStatChip('🔥 $_currentStreak day streak'),
+                                          ],
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),
@@ -807,6 +809,24 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatChip(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF6366F1).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 12,
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
