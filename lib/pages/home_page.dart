@@ -491,11 +491,7 @@ class _HomePageState extends State<HomePage> {
                                     ],
                                   ),
                                 ),
-                                Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 16,
-                                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
-                                ),
+
                               ],
                             ),
                           ),
