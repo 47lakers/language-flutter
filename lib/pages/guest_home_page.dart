@@ -225,11 +225,12 @@ class _GuestHomePageState extends State<GuestHomePage> {
         : null;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('DailyFrase (Guest)'),
+        title: const Text('DailyFrase', overflow: TextOverflow.ellipsis),
+        centerTitle: true,
         actions: [
           TextButton.icon(
             icon: const Icon(Icons.logout, color: Colors.white),
-            label: const Text('Back to Login', style: TextStyle(color: Colors.white)),
+            label: const Text('Login', style: TextStyle(color: Colors.white)),
             onPressed: () {
               if (kIsWeb) {
                 try {
@@ -241,8 +242,15 @@ class _GuestHomePageState extends State<GuestHomePage> {
                 Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
               }
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: const Size(0, 36),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
         ],
+        automaticallyImplyLeading: true,
       ),
       drawer: _buildDrawer(),
       body: SafeArea(
