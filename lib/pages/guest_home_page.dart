@@ -322,11 +322,11 @@ class _GuestHomePageState extends State<GuestHomePage> {
                             ),
                           ] else if (currentSentence != null) ...[
                             Text(
-                              'Verb: \\${currentSentence['verb']}'.toUpperCase(),
+                              'Verb: ${currentSentence['verb']}'.toUpperCase(),
                               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color, letterSpacing: 2),
                             ),
                             const SizedBox(height: 8),
-                            Text('Phrases learned: \\$_phrasesLearned', style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
+                            Text('Phrases learned: $_phrasesLearned', style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6))),
                             const SizedBox(height: 48),
                             _buildSentenceCard(_showTranslationFirst ? _secondLanguage : _firstLanguage, _showTranslationFirst ? (currentSentence['translation_text'] ?? 'No text') : (currentSentence['target_text'] ?? 'No text'), Theme.of(context).cardColor),
                             if (_showTranslation) ...[
