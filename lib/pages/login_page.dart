@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
+import 'guest_onboarding_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -220,6 +221,27 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
+
+                    // Continue as Guest button
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.person_outline),
+                        label: const Text('Continue as Guest', style: TextStyle(fontSize: 16)),
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                // Navigate to guest onboarding page
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const GuestOnboardingPage(),
+                                  ),
+                                );
+                              },
+                      ),
+                    ),
 
 
                 ],
